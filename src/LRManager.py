@@ -3,73 +3,107 @@
 
 import sys
 import csv
+import LearnedIndexLR
+from LearnedIndexLR import LearnedIndexLR
 
 class LRManager:
     # CONSTRUCTOR
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, indexColumn: int):
         self.filepath = filepath
-        self.dataByCountry = {}
-        self.models = {}
+        self.indexColumn = int(indexColumn)
+        self.keyList = [] # LIST STORING ALL INDEXES
+        self.models = [] # LIST STORING ALL L.R. MODELS
 
-    # PROCESSES THE CSV INPUT FILE,
-    # SORTED BY COUNTRY NAME, THEN DESCENDING YEAR (2024, THEN 2023, ...)
+    # PROCESSES THE CSV INPUT FILE FOR THE COLUMN WITH THE KEYS
     def processInputFile(self):
         with open(self.filepath, "r") as inputFile:
             input = csv.reader(inputFile)
 
+            # WILL HAVE TO MANUALLY CHANGE THIS VALUE IF NOT USING HEADER ROW
+            checkHeaderRow = True
+
+            # ONLY NEED THE COLUMN CONTAINING THE KEYS
             for row in input:
-                # FOR NOW, WILL SKIP OVER ROWS WITH LESS THAN 4 ELEMENTS
-                if len(row) < 4 or row[0] == "Country":
+                # SKIP THE HEADER ROW
+                if checkHeaderRow:
+                    checkHeaderRow = False
                     continue
 
-                # IF ROW HAS 4 ELEMENTS
-                # PROCEED BY EXTRACTING DATA
+                # GET RECORD FROM SPECIFIED COLUMN
+                inputKeyValue = row[self.indexColumn].strip()
 
-                countryName = row[0].strip() # UNUSED, BUT CAN ADD BACK LATER
-                countryCode = row[1].strip()
-                inputYear = row[2].strip()
-                inputValue = row[3].strip()
-
-                # IF inputValue == "", THEN continue BECAUSE OF BLANK LINES
-                if inputValue == "":
+                # IF inputKeyValue == "", THEN continue
+                if inputKeyValue == "":
                     continue
 
                 # PROCESS INTO CORRECT FORMAT
-                year = int(inputYear)
-                value = float(inputValue)
-
-                # ADD COUNTRY CODE IF DOES NOT ALREDAY EXIST
-                if countryCode not in self.dataByCountry:
-                    self.dataByCountry[countryCode] = []
+                # WILL ALLOW FLOATS FOR NOW, MAY WANT TO CHECK THIS LATER
+                floatKeyValue = float(inputKeyValue)
 
                 # ADD TO LIST
-                self.dataByCountry[countryCode].append((year, value))
+                self.keyList.append(floatKeyValue)
+
+            # SORT LIST BY ASC AFTER FOR LOOP
+            self.keyList.sort()
                 
     # OUTPUT dataByCountry TO COMMAND LINE
-    def printAllData(self):
-        print("DATA BY COUNTRY")
+    def printKeyList(self):
+        print("printKeyList():")
 
-        for countryCode, dataList in self.dataByCountry.items():
-            print("\n" + countryCode + ":")
-            for (year, value) in dataList:
-                print("\t" + str(year) + " -> " + str(value))
+        for keyEntry in self.keyList:
+            print(keyEntry)
 
     # GETS THE DATA OF A SINGLE COUNTRY BY COUNTRY CODE
     def getCountryData(self, countryCode: str):
         returnValue = self.dataByCountry.get(countryCode, [])
         return returnValue
+    
+    # CREATE MODELS FOR ALL COUNTRIES
+    def initAllModels(self):
+        for countryCode, countryData in self.dataByCountry.items():
+            countryModel = LearnedIndexLR(countryCode, countryData)
+            countryModel.trainModel()
+            countryModel.calculateErrorRanges()
+            self.models[countryCode] = countryModel
+
+        print("[FROM LRManager.py] ALL MODELS INITIALISED") # TESTING
+
+    # GETS THE MODEL FOR A COUNTRY BY ITS COUNTRY CODE
+    def getModel(self, countryCode: str):
+        print(self.models.get(countryCode))
+        return self.models.get(countryCode)
+        
 
 # MAIN
 if __name__ == "__main__":
     # GET INPUT FILE FROM COMMAND LINE
     filepath = sys.argv[1]
+    indexColumn = sys.argv[2]
 
     # CREATE MANAGER INSTANCE
-    manager = LRManager(filepath)
+    manager = LRManager(filepath, indexColumn)
 
-    # CALL METHODS HERE
+    # TESTING THE MANAGER INSTANCE
     manager.processInputFile()
-    # manager.printDataByCountry()
+    manager.printKeyList()
+    # manager.initAllModels()
+    # manager.getModel("CA")
 
-    canadaData = manager.getCountryData("CA")
-    print(canadaData)
+
+    # TESTING THE MODEL INSTANCE
+    # canadaData = manager.getCountryData("CA")
+    # printString = ""
+    # for record in canadaData:
+    #     printString += str(record)
+    #     printString += ", "
+    # print(printString)
+
+    testIndexes = [2024, 2022, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000]
+
+    canadaModel = LearnedIndexLR(testIndexes)
+    canadaModel.trainModel()
+    canadaModel.printSlopeIntercept()
+    canadaModel.calculateErrorRanges()
+    canadaModel.printErrorRanges()
+
+ 

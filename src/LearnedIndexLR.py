@@ -4,9 +4,15 @@
 # https://www.w3schools.com/python/python_ml_linear_regression.asp
 
 class LearnedIndexLR:
-    def __init__(self, countryCode: str, countryData: list):
-        self.countryCode = countryCode
-        self.data = countryData # CONSIDER SORTING IN ASC. ORDER
+    def __init__(self, indexList: list):
+        self.indexList = indexList # CONSIDER SORTING IN ASC. ORDER
+        self.indexPositions = []
+
+        # CREATE INDEX OF INTS len(indexList)
+        positionsAppend = 0
+        for index in indexList:
+            self.indexPositions.append(positionsAppend)
+            positionsAppend += 1
 
         # THESE WILL BE USE FOR OUR [mx + b] LINEAR REGRESSION
         self.m = 0
@@ -19,31 +25,28 @@ class LearnedIndexLR:
 
     # LOAD THEN SORT INTO KEYS AND VALUES
     def trainModel(self):
-        # SEPARATE THE YEARS AND VALUES
-        dataYears, dataValues = zip(*self.data)
 
         # CALCULATE AVERAGES FOR LINEAR REGRESSION FORMULA
-        numberOfPoints = len(dataYears)
-        # x, y => years, values
-        avgYears = sum(dataYears) / numberOfPoints
-        avgValues = sum(dataValues) / numberOfPoints
+        numberOfPoints = len(self.indexList)
+        # x, y => indexList, indexPositions
+        avgIndex = sum(self.indexList) / numberOfPoints
+        avgPosition = sum(self.indexPositions) / numberOfPoints
 
         # CALCULATE THE SLOPE
         numeratorSum = 0
         denominatorSum = 0
-        for year, value in self.data:
-            xCalc = year - avgYears
+        for position in self.indexPositions:
+            xCalc = self.indexList[position] - avgIndex
             # FORMULA FOR SLOPE IN DOCUMENT
-            numeratorSum += xCalc * (value - avgValues)
+            numeratorSum += xCalc * (position - avgPosition)
             denominatorSum += xCalc * xCalc
         self.m = numeratorSum / denominatorSum
 
         # CALCULATE THE INTERCEPT 
-        self.b = avgValues - self.m * avgYears
+        self.b = avgPosition - self.m * avgIndex
 
     # OUTPUTS SLOPE AND INTERCEPT VALUES TO TERMINAL
     def printSlopeIntercept(self):
-        print("\n" + self.countryCode)
         print("\tself.m:\t" + str(self.m))
         print("\tself.b:\t" + str(self.b))
 
@@ -54,9 +57,9 @@ class LearnedIndexLR:
     
     # GETS THE MAX POSSIBLE ERROR RANGES
     def calculateErrorRanges(self):
-        for (year, actualValue) in self.data:
-            predictedValue = self.predict(year)
-            error = predictedValue - actualValue
+        for position in self.indexPositions:
+            predictedValue = self.predict(self.indexList[position])
+            error = predictedValue - position
 
             # GET THE MAX ERROR IN POSITIVE AND NEGATIVE
             self.maxError = max(self.maxError, abs(error))
